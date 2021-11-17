@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/gocolly/colly/v2"
-	"github.com/novel_crawler/internal/data"
+	"github.com/novel_crawler/internal/service/novel_crawler"
 	"strconv"
 	"strings"
 	"time"
@@ -32,16 +32,21 @@ func (c NovelClueCollector) Visit() {
 		fmt.Printf("%s, %s, %s, %s, %s \n\n\n", title, score, link, author, intro)
 
 		var iScore, _ = strconv.Atoi(score)
-		data.DBClient.NovelClue.Create().
-			SetIntro(intro).
-			SetLink(link).
-			SetScore(iScore).
-			SetTitle(title).
-			SetDate(time.Now()).
-			SetAuthor(strings.TrimPrefix(author[0], "作者：")).
-			SetCategoryTitle(strings.TrimPrefix(author[1], "类型：")).
-			SaveX(context.Background())
+
+		var service = &novel_crawler.Clue{
+			Intro:         intro,
+			Link:          link,
+			Score:         iScore,
+			Title:         title,
+			Date:          time.Now(),
+			Author:        strings.TrimPrefix(author[0], "作者："),
+			CategoryTitle: strings.TrimPrefix(author[1], "类型："),
+		}
+
+		_, _ = service.Save(context.Background())
+
 	})
+
 	// todo error handler
 	_ = c.collector.Visit("https://top.baidu.com/board?tab=novel")
 }
