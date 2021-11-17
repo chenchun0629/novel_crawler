@@ -1,28 +1,22 @@
-package cmd
+package main
 
 import (
 	"fmt"
+	"github.com/novel_crawler/cmd/crawler"
 	"github.com/spf13/cobra"
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "root",
-	Short: "Root short description",
-	Long:  "Root long description",
+	Use: "novel_crawler",
 }
-
 
 func init() {
-	rootCmd.AddCommand(versionCmd)
+	rootCmd.AddCommand(crawler.CrawlerCmd)
+	rootCmd.PersistentFlags().StringP("config", "c", "./configs", "config path")
 }
 
-var versionCmd = &cobra.Command{
-	Use:   "version",
-	Short: "Print the version number of Hugo",
-	Long:  `All software has versions. This is Hugo's`,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("Hugo Static Site Generator v0.9 -- HEAD")
-	},
+func main() {
+	Execute()
 }
 
 func Execute() {
