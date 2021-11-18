@@ -20,4 +20,10 @@ var CrawlerCmd = &cobra.Command{
 }
 
 func init() {
+	//var (
+	//	logger = log.NewStdLogger(os.Stdout)
+	//	helper = log.NewHelper(logger)
+	//)
+	//helper = log.NewHelper(log.NewFilter(logger))
+
 }

@@ -2,7 +2,6 @@ package collector
 
 import (
 	"context"
-	"fmt"
 	"github.com/gocolly/colly/v2"
 	"github.com/novel_crawler/internal/service/novel_crawler"
 	"strconv"
@@ -29,7 +28,7 @@ func (c NovelClueCollector) Visit() {
 			score  = e.ChildText("div.hot-index_1Bl1a")
 		)
 
-		fmt.Printf("%s, %s, %s, %s, %s \n\n\n", title, score, link, author, intro)
+		//fmt.Printf("%s, %s, %s, %s, %s \n\n\n", title, score, link, author, intro)
 
 		var iScore, _ = strconv.Atoi(score)
 
