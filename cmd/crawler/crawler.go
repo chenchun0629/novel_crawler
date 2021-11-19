@@ -4,6 +4,7 @@ import (
 	"github.com/novel_crawler/internal/biz/collector"
 	"github.com/novel_crawler/internal/data"
 	"github.com/novel_crawler/pkg/conf"
+	"github.com/novel_crawler/pkg/log"
 	"github.com/spf13/cobra"
 )
 
@@ -11,6 +12,7 @@ var CrawlerCmd = &cobra.Command{
 	Use:   "crawler",
 	Short: "爬取小说线索",
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		log.Init()
 		conf.Init(cmd.Flag("config").Value.String(), "yaml")
 		data.Init()
 	},

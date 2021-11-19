@@ -2,11 +2,13 @@ package log
 
 import (
 	"context"
+	"log"
 )
 
 // DefaultLogger is default logger.
-//var DefaultLogger Logger = NewStdLogger(log.Writer())
-var DefaultLogger Logger = NewZapLogger()
+var DefaultLogger Logger = NewStdLogger(log.Writer())
+
+//var DefaultLogger Logger = NewZapLogger()
 
 // Logger is a logger interface.
 type Logger interface {

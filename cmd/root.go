@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/novel_crawler/cmd/crawler"
 	"github.com/novel_crawler/pkg/log"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
 
@@ -13,15 +14,16 @@ var rootCmd = &cobra.Command{
 
 var logCmd = &cobra.Command{
 	Use: "log",
+	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		log.Init()
+	},
 	Run: func(cmd *cobra.Command, args []string) {
-
 		//// helper
 		helper := log.NewHelper(log.DefaultLogger)
-		helper.Log(log.LevelInfo, "key", "value")
 		helper.Info("info message")
 		helper.Infof("info %s", "message")
 		helper.Infow("hello world", "key", "value")
-
+		helper.Errorw("msg", "key", "value", "err", errors.WithStack(errors.New("haha")))
 	},
 }
 
