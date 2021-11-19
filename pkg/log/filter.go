@@ -46,6 +46,10 @@ type Filter struct {
 	filter func(level Level, keyvals ...interface{}) bool
 }
 
+func (f *Filter) Defer() {
+	f.logger.Defer()
+}
+
 // NewFilter new a logger filter.
 func NewFilter(logger Logger, opts ...FilterOption) *Filter {
 	options := Filter{

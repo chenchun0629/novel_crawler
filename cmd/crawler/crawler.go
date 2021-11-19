@@ -19,6 +19,9 @@ var CrawlerCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		collector.NewNovelClueCollector().Visit()
 	},
+	PersistentPostRun: func(cmd *cobra.Command, args []string) {
+		log.Defer()
+	},
 }
 
 func init() {

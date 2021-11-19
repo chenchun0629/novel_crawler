@@ -15,6 +15,8 @@ type stdLogger struct {
 	pool *sync.Pool
 }
 
+func (l *stdLogger) Defer() {}
+
 // NewStdLogger new a logger with writer.
 func NewStdLogger(w io.Writer) Logger {
 	return &stdLogger{

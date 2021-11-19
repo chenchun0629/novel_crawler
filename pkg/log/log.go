@@ -14,6 +14,7 @@ var DefaultLogger Logger = NewStdLogger(log.Writer())
 type Logger interface {
 	Log(level Level, keyvals ...interface{}) error
 	Logw(level Level, msg string, keyvals ...interface{}) error
+	Defer()
 }
 
 type logger struct {
@@ -22,6 +23,8 @@ type logger struct {
 	hasValuer bool
 	ctx       context.Context
 }
+
+func (c *logger) Defer() {}
 
 func (c *logger) Log(level Level, keyvals ...interface{}) error {
 	kvs := make([]interface{}, 0, len(c.prefix)+len(keyvals))

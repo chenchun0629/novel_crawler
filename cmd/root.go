@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/novel_crawler/cmd/crawler"
 	"github.com/novel_crawler/pkg/log"
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
 
@@ -23,7 +22,10 @@ var logCmd = &cobra.Command{
 		helper.Info("info message")
 		helper.Infof("info %s", "message")
 		helper.Infow("hello world", "key", "value")
-		helper.Errorw("msg", "key", "value", "err", errors.WithStack(errors.New("haha")))
+		//helper.Errorw("msg", "key", "value", "err", errors.WithStack(errors.New("haha")))
+	},
+	PersistentPostRun: func(cmd *cobra.Command, args []string) {
+		log.Defer()
 	},
 }
 

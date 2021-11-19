@@ -10,6 +10,10 @@ type zapLogger struct {
 	log *zap.Logger
 }
 
+func (l *zapLogger) Defer() {
+	_ = l.log.Sync()
+}
+
 // NewZapLogger new a logger with writer.
 func NewZapLogger() Logger {
 	return &zapLogger{
