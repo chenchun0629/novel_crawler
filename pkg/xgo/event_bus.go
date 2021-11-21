@@ -14,7 +14,7 @@ func NewEventBus(optsFuncs ...EventBusOptsFunc) *eventBus {
 	opts.apply(optsFuncs...)
 	return &eventBus{
 		cl: channelx.NewEventBus(
-			nil,
+			channelx.NewConsoleLogger(),
 			opts.chanBuffer,
 			opts.eventWorkers,
 			opts.autoRetryTimes,
