@@ -2,11 +2,10 @@ package xgo
 
 import "github.com/Ksloveyuan/channelx"
 
-// Task
-type Task = channelx.BatchProcessFunc
-
-// AggregatorOptionFunc
-type AggregatorOptionFunc = channelx.SetAggregatorOptionFunc
+type (
+	Task                 = channelx.BatchProcessFunc
+	AggregatorOptionFunc = channelx.SetAggregatorOptionFunc
+)
 
 func SetAggregatorOptionBuffer(buffer int) AggregatorOptionFunc {
 	return func(option channelx.AggregatorOption) channelx.AggregatorOption {
@@ -14,8 +13,6 @@ func SetAggregatorOptionBuffer(buffer int) AggregatorOptionFunc {
 		return option
 	}
 }
-
-// aggregator ========================
 
 func NewAggregator(task Task, optionFuncs ...AggregatorOptionFunc) *aggregator {
 	var w = &aggregator{
@@ -25,7 +22,6 @@ func NewAggregator(task Task, optionFuncs ...AggregatorOptionFunc) *aggregator {
 		),
 	}
 
-	w.managerID = defaultManager.register(w)
 	return w
 }
 
@@ -42,6 +38,7 @@ func (w *aggregator) Close() {
 
 func (w *aggregator) Run() {
 	w.cl.Start()
+	w.managerID = defaultManager.register(w)
 }
 
 func (w *aggregator) Push(item interface{}) {
