@@ -9,17 +9,17 @@ import (
 	"log"
 )
 
-var DBClient *ent.Client
+var EntClient *ent.Client
 
 func Init() {
 	var err error
-	DBClient, err = ent.Open("mysql", "root:root@tcp(localhost:3306)/novel_crawler?charset=utf8mb4&parseTime=true")
+	EntClient, err = ent.Open("mysql", "root:root@tcp(localhost:3306)/novel_crawler?charset=utf8mb4&parseTime=true")
 	if err != nil {
 		log.Fatalf("failed opening connection to sqlite: %v", err)
 	}
 
 	// Run the auto migration tool.
-	if err := DBClient.Schema.Create(context.Background(),
+	if err := EntClient.Schema.Create(context.Background(),
 		migrate.WithDropColumn(true),
 		migrate.WithDropIndex(true),
 		migrate.WithFixture(true),
