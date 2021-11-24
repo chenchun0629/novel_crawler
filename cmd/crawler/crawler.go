@@ -1,8 +1,11 @@
 package crawler
 
 import (
-	"github.com/novel_crawler/internal/biz/collector"
+	"context"
+	"fmt"
 	"github.com/novel_crawler/internal/data"
+	"github.com/novel_crawler/pkg/application"
+	"github.com/novel_crawler/pkg/application/serve"
 	"github.com/novel_crawler/pkg/conf"
 	"github.com/novel_crawler/pkg/log"
 	"github.com/spf13/cobra"
@@ -11,24 +14,36 @@ import (
 var CrawlerCmd = &cobra.Command{
 	Use:   "crawler",
 	Short: "爬取小说线索",
-	PersistentPreRun: func(cmd *cobra.Command, args []string) {
-		log.Init()
-		conf.Init(cmd.Flag("config").Value.String(), "yaml")
-		data.Init()
-	},
+
 	Run: func(cmd *cobra.Command, args []string) {
-		collector.NewNovelClueCollector().Visit()
-	},
-	PersistentPostRun: func(cmd *cobra.Command, args []string) {
-		log.Defer()
-	},
-}
+		var app = application.NewApp(context.Background())
+		app.RegisterBeforeAppStart(func(ctx context.Context) error {
+			log.Init()
+			conf.Init(cmd.Flag("config").Value.String(), "yaml")
+			data.Init()
+			return nil
+		})
 
-func init() {
-	//var (
-	//	logger = log.NewStdLogger(os.Stdout)
-	//	helper = log.NewHelper(logger)
-	//)
-	//helper = log.NewHelper(log.NewFilter(logger))
+		app.RegisterAfterAppStart(func(ctx context.Context) error {
+			log.Defer()
+			return nil
+		})
 
+		app.RegisterServes(serve.NewCommand(func() error {
+			helper := log.NewHelper(log.DefaultLogger)
+			helper.Info("info message")
+			helper.Infof("info %s", "message")
+			helper.Infow("hello world", "key", "value")
+			return nil
+		}))
+
+		var err = app.Run()
+
+		fmt.Println(err, "==========")
+
+		//collector.NewNovelClueCollector().Visit()
+	},
+	//PersistentPostRun: func(cmd *cobra.Command, args []string) {
+	//	log.Defer()
+	//},
 }

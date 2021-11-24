@@ -16,7 +16,9 @@ const (
 )
 
 type App struct {
-	ctx     context.Context
+	ctx    context.Context
+	cancel func()
+
 	appInfo appInfo
 
 	callbacks map[int][]func(ctx context.Context) error // 生命周期
@@ -26,12 +28,13 @@ type App struct {
 }
 
 func NewApp(ctx context.Context) *App {
-	return &App{
-		ctx:     ctx,
-		appInfo: appInfo{},
-		serves:  make([]Serve, 0),
-		sigs:    []os.Signal{syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGINT},
+	var c, cancel = context.WithCancel(ctx)
+	var a = &App{
+		ctx:    c,
+		cancel: cancel,
 	}
+
+	return a.init()
 }
 
 type appInfo struct {
@@ -41,8 +44,34 @@ type appInfo struct {
 	metadata map[string]string
 }
 
-func (a *App) RegisterStartup(fn ...func(ctx context.Context) error) {
+func (a *App) init() *App {
+
+	a.appInfo = appInfo{
+		id:       "",
+		name:     "novel_crawler",
+		version:  "",
+		metadata: nil,
+	}
+	a.serves = make([]Serve, 0)
+	a.sigs = []os.Signal{syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGINT}
+	a.callbacks = make(map[int][]func(ctx context.Context) error)
+
+	for _, v := range []int{BeforeAppStart, AfterAppStart} {
+		a.callbacks[v] = make([]func(ctx context.Context) error, 0)
+	}
+
+	return a
+}
+
+func (a *App) RegisterServes(serves ...Serve) {
+	a.serves = append(a.serves, serves...)
+}
+
+func (a *App) RegisterBeforeAppStart(fn ...func(ctx context.Context) error) {
 	a.callbacks[BeforeAppStart] = append(a.callbacks[BeforeAppStart], fn...)
+}
+func (a *App) RegisterAfterAppStart(fn ...func(ctx context.Context) error) {
+	a.callbacks[AfterAppStart] = append(a.callbacks[AfterAppStart], fn...)
 }
 
 func (a *App) Run() error {
@@ -50,7 +79,6 @@ func (a *App) Run() error {
 		eg, ctx = errgroup.WithContext(a.ctx)
 		wg      = sync.WaitGroup{}
 	)
-
 	if fns, has := a.callbacks[BeforeAppStart]; has {
 		for _, fn := range fns {
 			if err := fn(ctx); err != nil {
@@ -58,11 +86,15 @@ func (a *App) Run() error {
 			}
 		}
 	}
-
 	for _, serv := range a.serves {
 		var serv = serv
+		//eg.Go(func() error {
+		//	<-ctx.Done() // wait for stop signal
+		//	return serv.Stop()
+		//})
 		wg.Add(1)
 		eg.Go(func() error {
+			wg.Done()
 			return serv.Start(ctx)
 		})
 	}
@@ -78,7 +110,7 @@ func (a *App) Run() error {
 	}
 
 	// 注册 和 处理 signal
-	c := make(chan os.Signal, 1)
+	var c = make(chan os.Signal, 1)
 	signal.Notify(c, a.sigs...)
 	eg.Go(func() error {
 		for {
@@ -102,6 +134,10 @@ func (a *App) Run() error {
 }
 
 func (a App) Stop() error {
+	defer func() {
+		a.cancel()
+	}()
+
 	var eg = errgroup.Group{}
 	for _, serv := range a.serves {
 		var serv = serv
@@ -114,6 +150,10 @@ func (a App) Stop() error {
 }
 
 func (a App) ForceStop() error {
+	defer func() {
+		a.cancel()
+	}()
+
 	var eg = errgroup.Group{}
 	for _, serv := range a.serves {
 		var serv = serv

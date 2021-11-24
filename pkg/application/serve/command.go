@@ -5,16 +5,21 @@ import (
 )
 
 type Command struct {
+	fn func() error
+}
+
+func NewCommand(fn func() error) *Command {
+	return &Command{fn: fn}
 }
 
 func (c Command) Start(ctx context.Context) error {
-	panic("implement me")
+	return c.fn()
 }
 
 func (c Command) Stop() error {
-	panic("implement me")
+	return nil
 }
 
 func (c Command) ForceStop() error {
-	panic("implement me")
+	return nil
 }
