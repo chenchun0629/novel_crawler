@@ -43,7 +43,7 @@ var CrawlerCmd = &cobra.Command{
 
 		//
 	},
-	//PersistentPostRun: func(cmd *cobra.Command, args []string) {
-	//	log.Defer()
-	//},
+	PersistentPostRun: func(cmd *cobra.Command, args []string) {
+		//log.Defer()
+	},
 }

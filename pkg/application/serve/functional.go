@@ -4,21 +4,21 @@ import (
 	"context"
 )
 
-type Command struct {
+type Functional struct {
 	fn func() error
 
 	isRunning bool
 }
 
-func (c *Command) IsRunning() bool {
+func (c *Functional) IsRunning() bool {
 	return c.isRunning
 }
 
-func NewCommand(fn func() error) *Command {
-	return &Command{fn: fn}
+func NewCommand(fn func() error) *Functional {
+	return &Functional{fn: fn}
 }
 
-func (c *Command) Start(ctx context.Context) error {
+func (c *Functional) Start(ctx context.Context) error {
 	c.isRunning = true
 	defer func() {
 		c.isRunning = false
@@ -27,7 +27,7 @@ func (c *Command) Start(ctx context.Context) error {
 	return c.fn()
 }
 
-func (c Command) Stop() error {
+func (c Functional) Stop() error {
 	if !c.isRunning {
 		return nil
 	}
@@ -35,7 +35,7 @@ func (c Command) Stop() error {
 	return nil
 }
 
-func (c Command) ForceStop() error {
+func (c Functional) ForceStop() error {
 	if !c.isRunning {
 		return nil
 	}
