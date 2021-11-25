@@ -26,9 +26,6 @@ func (l *zapLogger) Log(level Level, keyvals ...interface{}) error {
 	if len(keyvals) == 0 {
 		return nil
 	}
-	if (len(keyvals) & 1) == 1 {
-		keyvals = append(keyvals, "KEYVALS UNPAIRED")
-	}
 
 	switch level {
 	case LevelDebug:

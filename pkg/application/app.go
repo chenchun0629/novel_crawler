@@ -76,6 +76,10 @@ func (a *App) RegisterAfterAppStart(fn ...func(ctx context.Context) error) {
 }
 
 func (a *App) Run() error {
+	if len(a.serves) == 0 {
+		return errors.New("empty serve, application cannot run")
+	}
+
 	var (
 		eg, ctx = errgroup.WithContext(a.ctx)
 		wg      = sync.WaitGroup{}

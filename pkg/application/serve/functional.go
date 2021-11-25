@@ -14,7 +14,7 @@ func (c *Functional) IsRunning() bool {
 	return c.isRunning
 }
 
-func NewCommand(fn func() error) *Functional {
+func NewFunctional(fn func() error) *Functional {
 	return &Functional{fn: fn}
 }
 

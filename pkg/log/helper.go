@@ -55,12 +55,12 @@ func (h *Helper) Logw(level Level, msg string, keyvals ...interface{}) {
 
 // Debug logs a message at debug level.
 func (h *Helper) Debug(a ...interface{}) {
-	h.Log(LevelDebug, h.msgKey, fmt.Sprint(a...))
+	h.Log(LevelDebug, fmt.Sprint(a...))
 }
 
 // Debugf logs a message at debug level.
 func (h *Helper) Debugf(format string, a ...interface{}) {
-	h.Log(LevelDebug, h.msgKey, fmt.Sprintf(format, a...))
+	h.Log(LevelDebug, fmt.Sprintf(format, a...))
 }
 
 // Debugw logs a message at debug level.
@@ -70,12 +70,12 @@ func (h *Helper) Debugw(msg string, keyvals ...interface{}) {
 
 // Info logs a message at info level.
 func (h *Helper) Info(a ...interface{}) {
-	h.Log(LevelInfo, h.msgKey, fmt.Sprint(a...))
+	h.Log(LevelInfo, fmt.Sprint(a...))
 }
 
 // Infof logs a message at info level.
 func (h *Helper) Infof(format string, a ...interface{}) {
-	h.Log(LevelInfo, h.msgKey, fmt.Sprintf(format, a...))
+	h.Log(LevelInfo, fmt.Sprintf(format, a...))
 }
 
 // Infow logs a message at info level.
@@ -85,12 +85,12 @@ func (h *Helper) Infow(msg string, keyvals ...interface{}) {
 
 // Warn logs a message at warn level.
 func (h *Helper) Warn(a ...interface{}) {
-	h.Log(LevelWarn, h.msgKey, fmt.Sprint(a...))
+	h.Log(LevelWarn, fmt.Sprint(a...))
 }
 
 // Warnf logs a message at warnf level.
 func (h *Helper) Warnf(format string, a ...interface{}) {
-	h.Log(LevelWarn, h.msgKey, fmt.Sprintf(format, a...))
+	h.Log(LevelWarn, fmt.Sprintf(format, a...))
 }
 
 // Warnw logs a message at warnf level.
@@ -100,12 +100,12 @@ func (h *Helper) Warnw(msg string, keyvals ...interface{}) {
 
 // Error logs a message at error level.
 func (h *Helper) Error(a ...interface{}) {
-	h.Log(LevelError, h.msgKey, fmt.Sprint(a...))
+	h.Log(LevelError, fmt.Sprint(a...))
 }
 
 // Errorf logs a message at error level.
 func (h *Helper) Errorf(format string, a ...interface{}) {
-	h.Log(LevelError, h.msgKey, fmt.Sprintf(format, a...))
+	h.Log(LevelError, fmt.Sprintf(format, a...))
 }
 
 // Errorw logs a message at error level.
@@ -115,13 +115,13 @@ func (h *Helper) Errorw(msg string, keyvals ...interface{}) {
 
 // Fatal logs a message at fatal level.
 func (h *Helper) Fatal(a ...interface{}) {
-	h.Log(LevelFatal, h.msgKey, fmt.Sprint(a...))
+	h.Log(LevelFatal, fmt.Sprint(a...))
 	os.Exit(1)
 }
 
 // Fatalf logs a message at fatal level.
 func (h *Helper) Fatalf(format string, a ...interface{}) {
-	h.Log(LevelFatal, h.msgKey, fmt.Sprintf(format, a...))
+	h.Log(LevelFatal, fmt.Sprintf(format, a...))
 	os.Exit(1)
 }
 

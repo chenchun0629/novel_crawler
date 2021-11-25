@@ -18,7 +18,7 @@ func NewNovelClueCollector() *NovelClueCollector {
 	return &NovelClueCollector{collector: c}
 }
 
-func (c NovelClueCollector) Visit() {
+func (c NovelClueCollector) Visit() error {
 	c.collector.OnHTML("div.category-wrap_iQLoo", func(e *colly.HTMLElement) {
 		var (
 			title  = e.ChildText("a[href]>div.c-single-text-ellipsis")
@@ -47,5 +47,5 @@ func (c NovelClueCollector) Visit() {
 	})
 
 	// todo error handler
-	_ = c.collector.Visit("https://top.baidu.com/board?tab=novel")
+	return c.collector.Visit("https://top.baidu.com/board?tab=novel")
 }
