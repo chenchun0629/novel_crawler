@@ -2,7 +2,7 @@ package crawler
 
 import (
 	"context"
-	"fmt"
+	"github.com/novel_crawler/internal/biz/collector"
 	"github.com/novel_crawler/internal/data"
 	"github.com/novel_crawler/pkg/application"
 	"github.com/novel_crawler/pkg/application/serve"
@@ -30,18 +30,18 @@ var CrawlerCmd = &cobra.Command{
 		})
 
 		app.RegisterServes(serve.NewCommand(func() error {
-			helper := log.NewHelper(log.DefaultLogger)
-			helper.Info("info message")
-			helper.Infof("info %s", "message")
-			helper.Infow("hello world", "key", "value")
+			collector.NewNovelClueCollector().Visit()
+
+			//helper := log.NewHelper(log.DefaultLogger)
+			//helper.Info("info message")
+			//helper.Infof("info %s", "message")
+			//helper.Infow("hello world", "key", "value")
 			return nil
 		}))
 
-		var err = app.Run()
+		var _ = app.Run()
 
-		fmt.Println(err, "==========")
-
-		//collector.NewNovelClueCollector().Visit()
+		//
 	},
 	//PersistentPostRun: func(cmd *cobra.Command, args []string) {
 	//	log.Defer()

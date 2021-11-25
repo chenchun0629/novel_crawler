@@ -18,6 +18,7 @@ const (
 type App struct {
 	ctx    context.Context
 	cancel func()
+	lock   sync.Mutex
 
 	appInfo appInfo
 
@@ -88,12 +89,11 @@ func (a *App) Run() error {
 	}
 	for _, serv := range a.serves {
 		var serv = serv
-		//eg.Go(func() error {
-		//	<-ctx.Done() // wait for stop signal
-		//	return serv.Stop()
-		//})
 		wg.Add(1)
 		eg.Go(func() error {
+			defer func() {
+				a.tryCancel()
+			}()
 			wg.Done()
 			return serv.Start(ctx)
 		})
@@ -133,7 +133,20 @@ func (a *App) Run() error {
 	return nil
 }
 
-func (a App) Stop() error {
+func (a *App) tryCancel() {
+	a.lock.Lock()
+	defer a.lock.Unlock()
+
+	for _, serv := range a.serves {
+		if serv.IsRunning() {
+			return
+		}
+	}
+
+	a.cancel()
+}
+
+func (a *App) Stop() error {
 	defer func() {
 		a.cancel()
 	}()
@@ -149,7 +162,7 @@ func (a App) Stop() error {
 	return eg.Wait()
 }
 
-func (a App) ForceStop() error {
+func (a *App) ForceStop() error {
 	defer func() {
 		a.cancel()
 	}()
