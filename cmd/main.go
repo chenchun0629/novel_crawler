@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/novel_crawler/cmd/crawler"
+	"github.com/novel_crawler/cmd/cron"
 	"github.com/novel_crawler/pkg/log"
 	"github.com/spf13/cobra"
 )
@@ -27,5 +28,6 @@ var rootCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(crawler.CrawlerCmd)
+	rootCmd.AddCommand(cron.CronCmd)
 	rootCmd.PersistentFlags().StringP("config", "c", "./configs", "config path")
 }

@@ -3,6 +3,7 @@ package application
 import (
 	"context"
 	"errors"
+	"github.com/novel_crawler/pkg/log"
 	"golang.org/x/sync/errgroup"
 	"os"
 	"os/signal"
@@ -122,6 +123,7 @@ func (a *App) Run() error {
 			case <-ctx.Done():
 				return ctx.Err()
 			case <-c:
+				log.Infow("signal stop application ...")
 				err := a.Stop()
 				if err != nil {
 					//a.opts.logger.Errorf("failed to stop app: %v", err)
@@ -155,6 +157,8 @@ func (a *App) Stop() error {
 		a.cancel()
 	}()
 
+	log.Infow("start to stop application ...")
+
 	var eg = errgroup.Group{}
 	for _, serv := range a.serves {
 		var serv = serv
@@ -170,6 +174,8 @@ func (a *App) ForceStop() error {
 	defer func() {
 		a.cancel()
 	}()
+
+	log.Infow("start to force stop application ...")
 
 	var eg = errgroup.Group{}
 	for _, serv := range a.serves {
