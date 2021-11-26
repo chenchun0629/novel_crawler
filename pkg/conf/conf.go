@@ -49,6 +49,18 @@ func init() {
 	cfg = NewConfiguration()
 }
 
+func Load(key string, s interface{}) error {
+	if err := cfg.client.Sub(key).Unmarshal(s); err != nil {
+		return err
+	}
+
+	cfg.AddOnChange(func(configuration *Configuration) {
+		_ = cfg.client.Sub(key).Unmarshal(s)
+	})
+
+	return nil
+}
+
 func Init(path, ext string) {
 	cfg.SetConfigType(ext)
 	cfg.AddConfigPath(path)
