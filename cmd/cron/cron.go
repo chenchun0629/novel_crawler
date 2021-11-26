@@ -2,7 +2,6 @@ package cron
 
 import (
 	"context"
-	"fmt"
 	"github.com/novel_crawler/internal/biz/collector"
 	"github.com/novel_crawler/internal/data"
 	"github.com/novel_crawler/pkg/application"
@@ -10,7 +9,6 @@ import (
 	"github.com/novel_crawler/pkg/conf"
 	"github.com/novel_crawler/pkg/log"
 	"github.com/spf13/cobra"
-	"time"
 )
 
 var CronCmd = &cobra.Command{
@@ -42,11 +40,11 @@ var CronCmd = &cobra.Command{
 				log.Info("执行任务采集小说线索任务完成")
 			}
 		})
-		_, _ = c.AddFunc("@every 1s", func() {
-			fmt.Println("begin tick every 1 second")
-			time.Sleep(5 * time.Second)
-			fmt.Println("end tick every 1 second")
-		})
+		//_, _ = c.AddFunc("@every 1s", func() {
+		//	fmt.Println("begin tick every 1 second")
+		//	time.Sleep(5 * time.Second)
+		//	fmt.Println("end tick every 1 second")
+		//})
 		app.RegisterServes(
 			c,
 		)
