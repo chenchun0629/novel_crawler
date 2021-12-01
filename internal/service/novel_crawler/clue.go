@@ -3,6 +3,7 @@ package novel_crawler
 import (
 	"context"
 	"errors"
+	"github.com/jinzhu/now"
 	"github.com/novel_crawler/internal/data"
 	"github.com/novel_crawler/internal/data/ent"
 	"github.com/novel_crawler/internal/data/ent/novelclue"
@@ -25,7 +26,7 @@ func (c Clue) Save(ctx context.Context) (*ent.NovelClue, error) {
 		clue, err = query.Where(
 			novelclue.AuthorEQ(c.Author),
 			novelclue.TitleEQ(c.Title),
-			novelclue.DateEQ(c.Date),
+			novelclue.DateEQ(now.New(c.Date).BeginningOfDay()),
 		).First(ctx)
 	)
 
