@@ -27,7 +27,7 @@ func Init() {
 	}
 
 	var err error
-	EntClient, err = ent.Open(cfg.Driver, cfg.Source, ent.Debug())
+	EntClient, err = ent.Open(cfg.Driver, cfg.Source /*, ent.Debug()*/)
 	if err != nil {
 		log.Fatalf("failed opening connection to sqlite: %v", err)
 	}

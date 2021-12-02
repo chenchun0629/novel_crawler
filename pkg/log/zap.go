@@ -2,6 +2,8 @@ package log
 
 import (
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+	"os"
 )
 
 var _ Logger = (*zapLogger)(nil)
@@ -16,8 +18,22 @@ func (l *zapLogger) Defer() {
 
 // NewZapLogger new a logger with writer.
 func NewZapLogger() Logger {
+	var (
+		encoderCfg = zapcore.EncoderConfig{
+			MessageKey:     "msg",
+			LevelKey:       "level",
+			TimeKey:        "time",
+			NameKey:        "logger",
+			EncodeLevel:    zapcore.LowercaseLevelEncoder,
+			EncodeTime:     zapcore.TimeEncoderOfLayout("2006-01-02 15:04:05.999999999"),
+			EncodeDuration: zapcore.StringDurationEncoder,
+		}
+		core = zapcore.NewCore(zapcore.NewJSONEncoder(encoderCfg), os.Stdout, zap.DebugLevel)
+		zl   = zap.New(core).WithOptions()
+	)
+
 	return &zapLogger{
-		log: zap.NewExample(),
+		log: zl,
 	}
 }
 
