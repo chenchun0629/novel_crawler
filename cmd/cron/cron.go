@@ -34,7 +34,7 @@ var CronCmd = &cobra.Command{
 
 		var (
 			c    = serve.NewXcron()
-			_, _ = c.AddFunc("0 10 * * *", func() {
+			_, _ = c.AddFunc("45 10 * * *", func() {
 				if err := collector.NewNovelClueCollector().Visit(); err != nil {
 					log.Errorw("执行任务采集小说线索任务失败", "err", err)
 				} else {
