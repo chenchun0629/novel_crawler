@@ -32,14 +32,19 @@ var CronCmd = &cobra.Command{
 			Source string `json:"source" yaml:"source"`
 		}
 
-		var c = serve.NewXcron()
-		_, _ = c.AddFunc("0 30 * * * *", func() {
-			if err := collector.NewNovelClueCollector().Visit(); err != nil {
-				log.Errorw("执行任务采集小说线索任务失败", "err", err)
-			} else {
-				log.Info("执行任务采集小说线索任务完成")
-			}
-		})
+		var (
+			c    = serve.NewXcron()
+			_, _ = c.AddFunc("0 10 * * *", func() {
+				if err := collector.NewNovelClueCollector().Visit(); err != nil {
+					log.Errorw("执行任务采集小说线索任务失败", "err", err)
+				} else {
+					log.Info("执行任务采集小说线索任务完成")
+				}
+			})
+		)
+
+		//fmt.Println("================err", err)
+
 		//_, _ = c.AddFunc("@every 1s", func() {
 		//	fmt.Println("begin tick every 1 second")
 		//	time.Sleep(5 * time.Second)
