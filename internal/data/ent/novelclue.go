@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
+	"github.com/novel_crawler/internal/data/ent/novel"
 	"github.com/novel_crawler/internal/data/ent/novelclue"
 )
 
@@ -41,6 +42,33 @@ type NovelClue struct {
 	// Link holds the value of the "link" field.
 	// 搜索连接
 	Link string `json:"link,omitempty"`
+	// Edges holds the relations/edges for other nodes in the graph.
+	// The values are being populated by the NovelClueQuery when eager-loading is set.
+	Edges      NovelClueEdges `json:"edges"`
+	novel_clue *int
+}
+
+// NovelClueEdges holds the relations/edges for other nodes in the graph.
+type NovelClueEdges struct {
+	// Novel holds the value of the novel edge.
+	Novel *Novel `json:"novel,omitempty"`
+	// loadedTypes holds the information for reporting if a
+	// type was loaded (or requested) in eager-loading or not.
+	loadedTypes [1]bool
+}
+
+// NovelOrErr returns the Novel value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e NovelClueEdges) NovelOrErr() (*Novel, error) {
+	if e.loadedTypes[0] {
+		if e.Novel == nil {
+			// The edge novel was loaded in eager-loading,
+			// but was not found.
+			return nil, &NotFoundError{label: novel.Label}
+		}
+		return e.Novel, nil
+	}
+	return nil, &NotLoadedError{edge: "novel"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -54,6 +82,8 @@ func (*NovelClue) scanValues(columns []string) ([]interface{}, error) {
 			values[i] = new(sql.NullString)
 		case novelclue.FieldCreateTime, novelclue.FieldUpdateTime, novelclue.FieldDate:
 			values[i] = new(sql.NullTime)
+		case novelclue.ForeignKeys[0]: // novel_clue
+			values[i] = new(sql.NullInt64)
 		default:
 			return nil, fmt.Errorf("unexpected column %q for type NovelClue", columns[i])
 		}
@@ -129,9 +159,21 @@ func (nc *NovelClue) assignValues(columns []string, values []interface{}) error 
 			} else if value.Valid {
 				nc.Link = value.String
 			}
+		case novelclue.ForeignKeys[0]:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for edge-field novel_clue", value)
+			} else if value.Valid {
+				nc.novel_clue = new(int)
+				*nc.novel_clue = int(value.Int64)
+			}
 		}
 	}
 	return nil
+}
+
+// QueryNovel queries the "novel" edge of the NovelClue entity.
+func (nc *NovelClue) QueryNovel() *NovelQuery {
+	return (&NovelClueClient{config: nc.config}).QueryNovel(nc)
 }
 
 // Update returns a builder for updating this NovelClue.

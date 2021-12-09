@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/novel_crawler/internal/data/ent/novel"
 	"github.com/novel_crawler/internal/data/ent/novelclue"
 	"github.com/novel_crawler/internal/data/ent/predicate"
 
@@ -23,8 +24,664 @@ const (
 	OpUpdateOne = ent.OpUpdateOne
 
 	// Node types.
+	TypeNovel     = "Novel"
 	TypeNovelClue = "NovelClue"
 )
+
+// NovelMutation represents an operation that mutates the Novel nodes in the graph.
+type NovelMutation struct {
+	config
+	op             Op
+	typ            string
+	id             *int
+	create_time    *time.Time
+	update_time    *time.Time
+	title          *string
+	author         *string
+	category_title *string
+	intro          *string
+	clearedFields  map[string]struct{}
+	clue           map[int]struct{}
+	removedclue    map[int]struct{}
+	clearedclue    bool
+	done           bool
+	oldValue       func(context.Context) (*Novel, error)
+	predicates     []predicate.Novel
+}
+
+var _ ent.Mutation = (*NovelMutation)(nil)
+
+// novelOption allows management of the mutation configuration using functional options.
+type novelOption func(*NovelMutation)
+
+// newNovelMutation creates new mutation for the Novel entity.
+func newNovelMutation(c config, op Op, opts ...novelOption) *NovelMutation {
+	m := &NovelMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeNovel,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withNovelID sets the ID field of the mutation.
+func withNovelID(id int) novelOption {
+	return func(m *NovelMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *Novel
+		)
+		m.oldValue = func(ctx context.Context) (*Novel, error) {
+			once.Do(func() {
+				if m.done {
+					err = fmt.Errorf("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().Novel.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withNovel sets the old Novel of the mutation.
+func withNovel(node *Novel) novelOption {
+	return func(m *NovelMutation) {
+		m.oldValue = func(context.Context) (*Novel, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m NovelMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m NovelMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, fmt.Errorf("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *NovelMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// SetCreateTime sets the "create_time" field.
+func (m *NovelMutation) SetCreateTime(t time.Time) {
+	m.create_time = &t
+}
+
+// CreateTime returns the value of the "create_time" field in the mutation.
+func (m *NovelMutation) CreateTime() (r time.Time, exists bool) {
+	v := m.create_time
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreateTime returns the old "create_time" field's value of the Novel entity.
+// If the Novel object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NovelMutation) OldCreateTime(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldCreateTime is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldCreateTime requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreateTime: %w", err)
+	}
+	return oldValue.CreateTime, nil
+}
+
+// ResetCreateTime resets all changes to the "create_time" field.
+func (m *NovelMutation) ResetCreateTime() {
+	m.create_time = nil
+}
+
+// SetUpdateTime sets the "update_time" field.
+func (m *NovelMutation) SetUpdateTime(t time.Time) {
+	m.update_time = &t
+}
+
+// UpdateTime returns the value of the "update_time" field in the mutation.
+func (m *NovelMutation) UpdateTime() (r time.Time, exists bool) {
+	v := m.update_time
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdateTime returns the old "update_time" field's value of the Novel entity.
+// If the Novel object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NovelMutation) OldUpdateTime(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldUpdateTime is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldUpdateTime requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdateTime: %w", err)
+	}
+	return oldValue.UpdateTime, nil
+}
+
+// ResetUpdateTime resets all changes to the "update_time" field.
+func (m *NovelMutation) ResetUpdateTime() {
+	m.update_time = nil
+}
+
+// SetTitle sets the "title" field.
+func (m *NovelMutation) SetTitle(s string) {
+	m.title = &s
+}
+
+// Title returns the value of the "title" field in the mutation.
+func (m *NovelMutation) Title() (r string, exists bool) {
+	v := m.title
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTitle returns the old "title" field's value of the Novel entity.
+// If the Novel object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NovelMutation) OldTitle(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldTitle is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldTitle requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTitle: %w", err)
+	}
+	return oldValue.Title, nil
+}
+
+// ResetTitle resets all changes to the "title" field.
+func (m *NovelMutation) ResetTitle() {
+	m.title = nil
+}
+
+// SetAuthor sets the "author" field.
+func (m *NovelMutation) SetAuthor(s string) {
+	m.author = &s
+}
+
+// Author returns the value of the "author" field in the mutation.
+func (m *NovelMutation) Author() (r string, exists bool) {
+	v := m.author
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAuthor returns the old "author" field's value of the Novel entity.
+// If the Novel object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NovelMutation) OldAuthor(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldAuthor is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldAuthor requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAuthor: %w", err)
+	}
+	return oldValue.Author, nil
+}
+
+// ResetAuthor resets all changes to the "author" field.
+func (m *NovelMutation) ResetAuthor() {
+	m.author = nil
+}
+
+// SetCategoryTitle sets the "category_title" field.
+func (m *NovelMutation) SetCategoryTitle(s string) {
+	m.category_title = &s
+}
+
+// CategoryTitle returns the value of the "category_title" field in the mutation.
+func (m *NovelMutation) CategoryTitle() (r string, exists bool) {
+	v := m.category_title
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCategoryTitle returns the old "category_title" field's value of the Novel entity.
+// If the Novel object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NovelMutation) OldCategoryTitle(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldCategoryTitle is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldCategoryTitle requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCategoryTitle: %w", err)
+	}
+	return oldValue.CategoryTitle, nil
+}
+
+// ResetCategoryTitle resets all changes to the "category_title" field.
+func (m *NovelMutation) ResetCategoryTitle() {
+	m.category_title = nil
+}
+
+// SetIntro sets the "intro" field.
+func (m *NovelMutation) SetIntro(s string) {
+	m.intro = &s
+}
+
+// Intro returns the value of the "intro" field in the mutation.
+func (m *NovelMutation) Intro() (r string, exists bool) {
+	v := m.intro
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIntro returns the old "intro" field's value of the Novel entity.
+// If the Novel object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NovelMutation) OldIntro(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldIntro is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldIntro requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIntro: %w", err)
+	}
+	return oldValue.Intro, nil
+}
+
+// ResetIntro resets all changes to the "intro" field.
+func (m *NovelMutation) ResetIntro() {
+	m.intro = nil
+}
+
+// AddClueIDs adds the "clue" edge to the NovelClue entity by ids.
+func (m *NovelMutation) AddClueIDs(ids ...int) {
+	if m.clue == nil {
+		m.clue = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.clue[ids[i]] = struct{}{}
+	}
+}
+
+// ClearClue clears the "clue" edge to the NovelClue entity.
+func (m *NovelMutation) ClearClue() {
+	m.clearedclue = true
+}
+
+// ClueCleared reports if the "clue" edge to the NovelClue entity was cleared.
+func (m *NovelMutation) ClueCleared() bool {
+	return m.clearedclue
+}
+
+// RemoveClueIDs removes the "clue" edge to the NovelClue entity by IDs.
+func (m *NovelMutation) RemoveClueIDs(ids ...int) {
+	if m.removedclue == nil {
+		m.removedclue = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.clue, ids[i])
+		m.removedclue[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedClue returns the removed IDs of the "clue" edge to the NovelClue entity.
+func (m *NovelMutation) RemovedClueIDs() (ids []int) {
+	for id := range m.removedclue {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ClueIDs returns the "clue" edge IDs in the mutation.
+func (m *NovelMutation) ClueIDs() (ids []int) {
+	for id := range m.clue {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetClue resets all changes to the "clue" edge.
+func (m *NovelMutation) ResetClue() {
+	m.clue = nil
+	m.clearedclue = false
+	m.removedclue = nil
+}
+
+// Where appends a list predicates to the NovelMutation builder.
+func (m *NovelMutation) Where(ps ...predicate.Novel) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// Op returns the operation name.
+func (m *NovelMutation) Op() Op {
+	return m.op
+}
+
+// Type returns the node type of this mutation (Novel).
+func (m *NovelMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *NovelMutation) Fields() []string {
+	fields := make([]string, 0, 6)
+	if m.create_time != nil {
+		fields = append(fields, novel.FieldCreateTime)
+	}
+	if m.update_time != nil {
+		fields = append(fields, novel.FieldUpdateTime)
+	}
+	if m.title != nil {
+		fields = append(fields, novel.FieldTitle)
+	}
+	if m.author != nil {
+		fields = append(fields, novel.FieldAuthor)
+	}
+	if m.category_title != nil {
+		fields = append(fields, novel.FieldCategoryTitle)
+	}
+	if m.intro != nil {
+		fields = append(fields, novel.FieldIntro)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *NovelMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case novel.FieldCreateTime:
+		return m.CreateTime()
+	case novel.FieldUpdateTime:
+		return m.UpdateTime()
+	case novel.FieldTitle:
+		return m.Title()
+	case novel.FieldAuthor:
+		return m.Author()
+	case novel.FieldCategoryTitle:
+		return m.CategoryTitle()
+	case novel.FieldIntro:
+		return m.Intro()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *NovelMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case novel.FieldCreateTime:
+		return m.OldCreateTime(ctx)
+	case novel.FieldUpdateTime:
+		return m.OldUpdateTime(ctx)
+	case novel.FieldTitle:
+		return m.OldTitle(ctx)
+	case novel.FieldAuthor:
+		return m.OldAuthor(ctx)
+	case novel.FieldCategoryTitle:
+		return m.OldCategoryTitle(ctx)
+	case novel.FieldIntro:
+		return m.OldIntro(ctx)
+	}
+	return nil, fmt.Errorf("unknown Novel field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *NovelMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case novel.FieldCreateTime:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreateTime(v)
+		return nil
+	case novel.FieldUpdateTime:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdateTime(v)
+		return nil
+	case novel.FieldTitle:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTitle(v)
+		return nil
+	case novel.FieldAuthor:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAuthor(v)
+		return nil
+	case novel.FieldCategoryTitle:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCategoryTitle(v)
+		return nil
+	case novel.FieldIntro:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIntro(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Novel field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *NovelMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *NovelMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *NovelMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown Novel numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *NovelMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *NovelMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *NovelMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown Novel nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *NovelMutation) ResetField(name string) error {
+	switch name {
+	case novel.FieldCreateTime:
+		m.ResetCreateTime()
+		return nil
+	case novel.FieldUpdateTime:
+		m.ResetUpdateTime()
+		return nil
+	case novel.FieldTitle:
+		m.ResetTitle()
+		return nil
+	case novel.FieldAuthor:
+		m.ResetAuthor()
+		return nil
+	case novel.FieldCategoryTitle:
+		m.ResetCategoryTitle()
+		return nil
+	case novel.FieldIntro:
+		m.ResetIntro()
+		return nil
+	}
+	return fmt.Errorf("unknown Novel field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *NovelMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clue != nil {
+		edges = append(edges, novel.EdgeClue)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *NovelMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case novel.EdgeClue:
+		ids := make([]ent.Value, 0, len(m.clue))
+		for id := range m.clue {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *NovelMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.removedclue != nil {
+		edges = append(edges, novel.EdgeClue)
+	}
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *NovelMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case novel.EdgeClue:
+		ids := make([]ent.Value, 0, len(m.removedclue))
+		for id := range m.removedclue {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *NovelMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedclue {
+		edges = append(edges, novel.EdgeClue)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *NovelMutation) EdgeCleared(name string) bool {
+	switch name {
+	case novel.EdgeClue:
+		return m.clearedclue
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *NovelMutation) ClearEdge(name string) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown Novel unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *NovelMutation) ResetEdge(name string) error {
+	switch name {
+	case novel.EdgeClue:
+		m.ResetClue()
+		return nil
+	}
+	return fmt.Errorf("unknown Novel edge %s", name)
+}
 
 // NovelClueMutation represents an operation that mutates the NovelClue nodes in the graph.
 type NovelClueMutation struct {
@@ -43,6 +700,8 @@ type NovelClueMutation struct {
 	intro          *string
 	link           *string
 	clearedFields  map[string]struct{}
+	novel          *int
+	clearednovel   bool
 	done           bool
 	oldValue       func(context.Context) (*NovelClue, error)
 	predicates     []predicate.NovelClue
@@ -471,6 +1130,45 @@ func (m *NovelClueMutation) ResetLink() {
 	m.link = nil
 }
 
+// SetNovelID sets the "novel" edge to the Novel entity by id.
+func (m *NovelClueMutation) SetNovelID(id int) {
+	m.novel = &id
+}
+
+// ClearNovel clears the "novel" edge to the Novel entity.
+func (m *NovelClueMutation) ClearNovel() {
+	m.clearednovel = true
+}
+
+// NovelCleared reports if the "novel" edge to the Novel entity was cleared.
+func (m *NovelClueMutation) NovelCleared() bool {
+	return m.clearednovel
+}
+
+// NovelID returns the "novel" edge ID in the mutation.
+func (m *NovelClueMutation) NovelID() (id int, exists bool) {
+	if m.novel != nil {
+		return *m.novel, true
+	}
+	return
+}
+
+// NovelIDs returns the "novel" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// NovelID instead. It exists only for internal usage by the builders.
+func (m *NovelClueMutation) NovelIDs() (ids []int) {
+	if id := m.novel; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetNovel resets all changes to the "novel" edge.
+func (m *NovelClueMutation) ResetNovel() {
+	m.novel = nil
+	m.clearednovel = false
+}
+
 // Where appends a list predicates to the NovelClueMutation builder.
 func (m *NovelClueMutation) Where(ps ...predicate.NovelClue) {
 	m.predicates = append(m.predicates, ps...)
@@ -740,48 +1438,76 @@ func (m *NovelClueMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *NovelClueMutation) AddedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.novel != nil {
+		edges = append(edges, novelclue.EdgeNovel)
+	}
 	return edges
 }
 
 // AddedIDs returns all IDs (to other nodes) that were added for the given edge
 // name in this mutation.
 func (m *NovelClueMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case novelclue.EdgeNovel:
+		if id := m.novel; id != nil {
+			return []ent.Value{*id}
+		}
+	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *NovelClueMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
 	return edges
 }
 
 // RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
 // the given name in this mutation.
 func (m *NovelClueMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *NovelClueMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.clearednovel {
+		edges = append(edges, novelclue.EdgeNovel)
+	}
 	return edges
 }
 
 // EdgeCleared returns a boolean which indicates if the edge with the given name
 // was cleared in this mutation.
 func (m *NovelClueMutation) EdgeCleared(name string) bool {
+	switch name {
+	case novelclue.EdgeNovel:
+		return m.clearednovel
+	}
 	return false
 }
 
 // ClearEdge clears the value of the edge with the given name. It returns an error
 // if that edge is not defined in the schema.
 func (m *NovelClueMutation) ClearEdge(name string) error {
+	switch name {
+	case novelclue.EdgeNovel:
+		m.ClearNovel()
+		return nil
+	}
 	return fmt.Errorf("unknown NovelClue unique edge %s", name)
 }
 
 // ResetEdge resets all changes to the edge with the given name in this mutation.
 // It returns an error if the edge is not defined in the schema.
 func (m *NovelClueMutation) ResetEdge(name string) error {
+	switch name {
+	case novelclue.EdgeNovel:
+		m.ResetNovel()
+		return nil
+	}
 	return fmt.Errorf("unknown NovelClue edge %s", name)
 }

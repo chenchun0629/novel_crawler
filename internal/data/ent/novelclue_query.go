@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/novel_crawler/internal/data/ent/novel"
 	"github.com/novel_crawler/internal/data/ent/novelclue"
 	"github.com/novel_crawler/internal/data/ent/predicate"
 )
@@ -24,6 +25,9 @@ type NovelClueQuery struct {
 	order      []OrderFunc
 	fields     []string
 	predicates []predicate.NovelClue
+	// eager-loading edges.
+	withNovel *NovelQuery
+	withFKs   bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -58,6 +62,28 @@ func (ncq *NovelClueQuery) Unique(unique bool) *NovelClueQuery {
 func (ncq *NovelClueQuery) Order(o ...OrderFunc) *NovelClueQuery {
 	ncq.order = append(ncq.order, o...)
 	return ncq
+}
+
+// QueryNovel chains the current query on the "novel" edge.
+func (ncq *NovelClueQuery) QueryNovel() *NovelQuery {
+	query := &NovelQuery{config: ncq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := ncq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := ncq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(novelclue.Table, novelclue.FieldID, selector),
+			sqlgraph.To(novel.Table, novel.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, novelclue.NovelTable, novelclue.NovelColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(ncq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
 }
 
 // First returns the first NovelClue entity from the query.
@@ -241,10 +267,22 @@ func (ncq *NovelClueQuery) Clone() *NovelClueQuery {
 		offset:     ncq.offset,
 		order:      append([]OrderFunc{}, ncq.order...),
 		predicates: append([]predicate.NovelClue{}, ncq.predicates...),
+		withNovel:  ncq.withNovel.Clone(),
 		// clone intermediate query.
 		sql:  ncq.sql.Clone(),
 		path: ncq.path,
 	}
+}
+
+// WithNovel tells the query-builder to eager-load the nodes that are connected to
+// the "novel" edge. The optional arguments are used to configure the query builder of the edge.
+func (ncq *NovelClueQuery) WithNovel(opts ...func(*NovelQuery)) *NovelClueQuery {
+	query := &NovelQuery{config: ncq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	ncq.withNovel = query
+	return ncq
 }
 
 // GroupBy is used to group vertices by one or more fields/columns.
@@ -310,9 +348,19 @@ func (ncq *NovelClueQuery) prepareQuery(ctx context.Context) error {
 
 func (ncq *NovelClueQuery) sqlAll(ctx context.Context) ([]*NovelClue, error) {
 	var (
-		nodes = []*NovelClue{}
-		_spec = ncq.querySpec()
+		nodes       = []*NovelClue{}
+		withFKs     = ncq.withFKs
+		_spec       = ncq.querySpec()
+		loadedTypes = [1]bool{
+			ncq.withNovel != nil,
+		}
 	)
+	if ncq.withNovel != nil {
+		withFKs = true
+	}
+	if withFKs {
+		_spec.Node.Columns = append(_spec.Node.Columns, novelclue.ForeignKeys...)
+	}
 	_spec.ScanValues = func(columns []string) ([]interface{}, error) {
 		node := &NovelClue{config: ncq.config}
 		nodes = append(nodes, node)
@@ -323,6 +371,7 @@ func (ncq *NovelClueQuery) sqlAll(ctx context.Context) ([]*NovelClue, error) {
 			return fmt.Errorf("ent: Assign called without calling ScanValues")
 		}
 		node := nodes[len(nodes)-1]
+		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
 	}
 	if err := sqlgraph.QueryNodes(ctx, ncq.driver, _spec); err != nil {
@@ -331,6 +380,36 @@ func (ncq *NovelClueQuery) sqlAll(ctx context.Context) ([]*NovelClue, error) {
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
+
+	if query := ncq.withNovel; query != nil {
+		ids := make([]int, 0, len(nodes))
+		nodeids := make(map[int][]*NovelClue)
+		for i := range nodes {
+			if nodes[i].novel_clue == nil {
+				continue
+			}
+			fk := *nodes[i].novel_clue
+			if _, ok := nodeids[fk]; !ok {
+				ids = append(ids, fk)
+			}
+			nodeids[fk] = append(nodeids[fk], nodes[i])
+		}
+		query.Where(novel.IDIn(ids...))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			nodes, ok := nodeids[n.ID]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected foreign-key "novel_clue" returned %v`, n.ID)
+			}
+			for i := range nodes {
+				nodes[i].Edges.Novel = n
+			}
+		}
+	}
+
 	return nodes, nil
 }
 

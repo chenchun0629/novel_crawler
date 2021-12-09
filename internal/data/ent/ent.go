@@ -8,6 +8,7 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
+	"github.com/novel_crawler/internal/data/ent/novel"
 	"github.com/novel_crawler/internal/data/ent/novelclue"
 )
 
@@ -29,6 +30,7 @@ type OrderFunc func(*sql.Selector)
 // columnChecker returns a function indicates if the column exists in the given column.
 func columnChecker(table string) func(string) error {
 	checks := map[string]func(string) bool{
+		novel.Table:     novel.ValidColumn,
 		novelclue.Table: novelclue.ValidColumn,
 	}
 	check, ok := checks[table]

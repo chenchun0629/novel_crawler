@@ -9,6 +9,22 @@ import (
 )
 
 var (
+	// NovelsColumns holds the columns for the "novels" table.
+	NovelsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "create_time", Type: field.TypeTime},
+		{Name: "update_time", Type: field.TypeTime},
+		{Name: "title", Type: field.TypeString, Size: 128},
+		{Name: "author", Type: field.TypeString, Size: 64},
+		{Name: "category_title", Type: field.TypeString},
+		{Name: "intro", Type: field.TypeString, Size: 1024},
+	}
+	// NovelsTable holds the schema information for the "novels" table.
+	NovelsTable = &schema.Table{
+		Name:       "novels",
+		Columns:    NovelsColumns,
+		PrimaryKey: []*schema.Column{NovelsColumns[0]},
+	}
 	// NovelCluesColumns holds the columns for the "novel_clues" table.
 	NovelCluesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -21,20 +37,31 @@ var (
 		{Name: "category_title", Type: field.TypeString},
 		{Name: "intro", Type: field.TypeString, Size: 1024},
 		{Name: "link", Type: field.TypeString, Size: 512},
+		{Name: "novel_clue", Type: field.TypeInt, Nullable: true},
 	}
 	// NovelCluesTable holds the schema information for the "novel_clues" table.
 	NovelCluesTable = &schema.Table{
 		Name:       "novel_clues",
 		Columns:    NovelCluesColumns,
 		PrimaryKey: []*schema.Column{NovelCluesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "novel_clues_novels_clue",
+				Columns:    []*schema.Column{NovelCluesColumns[10]},
+				RefColumns: []*schema.Column{NovelsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
 	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
+		NovelsTable,
 		NovelCluesTable,
 	}
 )
 
 func init() {
+	NovelCluesTable.ForeignKeys[0].RefTable = NovelsTable
 	NovelCluesTable.Annotation = &entsql.Annotation{
 		Charset:   "utf8mb4",
 		Collation: "utf8mb4_general_ci",

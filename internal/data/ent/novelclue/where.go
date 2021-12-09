@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/novel_crawler/internal/data/ent/predicate"
 )
 
@@ -1011,6 +1012,34 @@ func LinkEqualFold(v string) predicate.NovelClue {
 func LinkContainsFold(v string) predicate.NovelClue {
 	return predicate.NovelClue(func(s *sql.Selector) {
 		s.Where(sql.ContainsFold(s.C(FieldLink), v))
+	})
+}
+
+// HasNovel applies the HasEdge predicate on the "novel" edge.
+func HasNovel() predicate.NovelClue {
+	return predicate.NovelClue(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(NovelTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, NovelTable, NovelColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasNovelWith applies the HasEdge predicate on the "novel" edge with a given conditions (other predicates).
+func HasNovelWith(preds ...predicate.Novel) predicate.NovelClue {
+	return predicate.NovelClue(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(NovelInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, NovelTable, NovelColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
 	})
 }
 

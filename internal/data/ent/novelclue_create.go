@@ -10,6 +10,7 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/novel_crawler/internal/data/ent/novel"
 	"github.com/novel_crawler/internal/data/ent/novelclue"
 )
 
@@ -88,6 +89,25 @@ func (ncc *NovelClueCreate) SetIntro(s string) *NovelClueCreate {
 func (ncc *NovelClueCreate) SetLink(s string) *NovelClueCreate {
 	ncc.mutation.SetLink(s)
 	return ncc
+}
+
+// SetNovelID sets the "novel" edge to the Novel entity by ID.
+func (ncc *NovelClueCreate) SetNovelID(id int) *NovelClueCreate {
+	ncc.mutation.SetNovelID(id)
+	return ncc
+}
+
+// SetNillableNovelID sets the "novel" edge to the Novel entity by ID if the given value is not nil.
+func (ncc *NovelClueCreate) SetNillableNovelID(id *int) *NovelClueCreate {
+	if id != nil {
+		ncc = ncc.SetNovelID(*id)
+	}
+	return ncc
+}
+
+// SetNovel sets the "novel" edge to the Novel entity.
+func (ncc *NovelClueCreate) SetNovel(n *Novel) *NovelClueCreate {
+	return ncc.SetNovelID(n.ID)
 }
 
 // Mutation returns the NovelClueMutation object of the builder.
@@ -298,6 +318,26 @@ func (ncc *NovelClueCreate) createSpec() (*NovelClue, *sqlgraph.CreateSpec) {
 			Column: novelclue.FieldLink,
 		})
 		_node.Link = value
+	}
+	if nodes := ncc.mutation.NovelIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   novelclue.NovelTable,
+			Columns: []string{novelclue.NovelColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: novel.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.novel_clue = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
 }

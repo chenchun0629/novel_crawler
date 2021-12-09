@@ -5,6 +5,7 @@ package ent
 import (
 	"time"
 
+	"github.com/novel_crawler/internal/data/ent/novel"
 	"github.com/novel_crawler/internal/data/ent/novelclue"
 	"github.com/novel_crawler/internal/data/ent/schema"
 )
@@ -13,6 +14,21 @@ import (
 // (default values, validators, hooks and policies) and stitches it
 // to their package variables.
 func init() {
+	novelMixin := schema.Novel{}.Mixin()
+	novelMixinFields0 := novelMixin[0].Fields()
+	_ = novelMixinFields0
+	novelFields := schema.Novel{}.Fields()
+	_ = novelFields
+	// novelDescCreateTime is the schema descriptor for create_time field.
+	novelDescCreateTime := novelMixinFields0[0].Descriptor()
+	// novel.DefaultCreateTime holds the default value on creation for the create_time field.
+	novel.DefaultCreateTime = novelDescCreateTime.Default.(func() time.Time)
+	// novelDescUpdateTime is the schema descriptor for update_time field.
+	novelDescUpdateTime := novelMixinFields0[1].Descriptor()
+	// novel.DefaultUpdateTime holds the default value on creation for the update_time field.
+	novel.DefaultUpdateTime = novelDescUpdateTime.Default.(func() time.Time)
+	// novel.UpdateDefaultUpdateTime holds the default value on update for the update_time field.
+	novel.UpdateDefaultUpdateTime = novelDescUpdateTime.UpdateDefault.(func() time.Time)
 	novelclueMixin := schema.NovelClue{}.Mixin()
 	novelclueMixinFields0 := novelclueMixin[0].Fields()
 	_ = novelclueMixinFields0

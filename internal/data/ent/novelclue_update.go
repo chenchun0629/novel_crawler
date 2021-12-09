@@ -10,6 +10,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/novel_crawler/internal/data/ent/novel"
 	"github.com/novel_crawler/internal/data/ent/novelclue"
 	"github.com/novel_crawler/internal/data/ent/predicate"
 )
@@ -76,9 +77,34 @@ func (ncu *NovelClueUpdate) SetLink(s string) *NovelClueUpdate {
 	return ncu
 }
 
+// SetNovelID sets the "novel" edge to the Novel entity by ID.
+func (ncu *NovelClueUpdate) SetNovelID(id int) *NovelClueUpdate {
+	ncu.mutation.SetNovelID(id)
+	return ncu
+}
+
+// SetNillableNovelID sets the "novel" edge to the Novel entity by ID if the given value is not nil.
+func (ncu *NovelClueUpdate) SetNillableNovelID(id *int) *NovelClueUpdate {
+	if id != nil {
+		ncu = ncu.SetNovelID(*id)
+	}
+	return ncu
+}
+
+// SetNovel sets the "novel" edge to the Novel entity.
+func (ncu *NovelClueUpdate) SetNovel(n *Novel) *NovelClueUpdate {
+	return ncu.SetNovelID(n.ID)
+}
+
 // Mutation returns the NovelClueMutation object of the builder.
 func (ncu *NovelClueUpdate) Mutation() *NovelClueMutation {
 	return ncu.mutation
+}
+
+// ClearNovel clears the "novel" edge to the Novel entity.
+func (ncu *NovelClueUpdate) ClearNovel() *NovelClueUpdate {
+	ncu.mutation.ClearNovel()
+	return ncu
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -225,6 +251,41 @@ func (ncu *NovelClueUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: novelclue.FieldLink,
 		})
 	}
+	if ncu.mutation.NovelCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   novelclue.NovelTable,
+			Columns: []string{novelclue.NovelColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: novel.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ncu.mutation.NovelIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   novelclue.NovelTable,
+			Columns: []string{novelclue.NovelColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: novel.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, ncu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{novelclue.Label}
@@ -293,9 +354,34 @@ func (ncuo *NovelClueUpdateOne) SetLink(s string) *NovelClueUpdateOne {
 	return ncuo
 }
 
+// SetNovelID sets the "novel" edge to the Novel entity by ID.
+func (ncuo *NovelClueUpdateOne) SetNovelID(id int) *NovelClueUpdateOne {
+	ncuo.mutation.SetNovelID(id)
+	return ncuo
+}
+
+// SetNillableNovelID sets the "novel" edge to the Novel entity by ID if the given value is not nil.
+func (ncuo *NovelClueUpdateOne) SetNillableNovelID(id *int) *NovelClueUpdateOne {
+	if id != nil {
+		ncuo = ncuo.SetNovelID(*id)
+	}
+	return ncuo
+}
+
+// SetNovel sets the "novel" edge to the Novel entity.
+func (ncuo *NovelClueUpdateOne) SetNovel(n *Novel) *NovelClueUpdateOne {
+	return ncuo.SetNovelID(n.ID)
+}
+
 // Mutation returns the NovelClueMutation object of the builder.
 func (ncuo *NovelClueUpdateOne) Mutation() *NovelClueMutation {
 	return ncuo.mutation
+}
+
+// ClearNovel clears the "novel" edge to the Novel entity.
+func (ncuo *NovelClueUpdateOne) ClearNovel() *NovelClueUpdateOne {
+	ncuo.mutation.ClearNovel()
+	return ncuo
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
@@ -465,6 +551,41 @@ func (ncuo *NovelClueUpdateOne) sqlSave(ctx context.Context) (_node *NovelClue, 
 			Value:  value,
 			Column: novelclue.FieldLink,
 		})
+	}
+	if ncuo.mutation.NovelCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   novelclue.NovelTable,
+			Columns: []string{novelclue.NovelColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: novel.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ncuo.mutation.NovelIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   novelclue.NovelTable,
+			Columns: []string{novelclue.NovelColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: novel.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	_node = &NovelClue{config: ncuo.config}
 	_spec.Assign = _node.assignValues

@@ -9,10 +9,12 @@ import (
 
 	"github.com/novel_crawler/internal/data/ent/migrate"
 
+	"github.com/novel_crawler/internal/data/ent/novel"
 	"github.com/novel_crawler/internal/data/ent/novelclue"
 
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 )
 
 // Client is the client that holds all ent builders.
@@ -20,6 +22,8 @@ type Client struct {
 	config
 	// Schema is the client for creating, migrating and dropping schema.
 	Schema *migrate.Schema
+	// Novel is the client for interacting with the Novel builders.
+	Novel *NovelClient
 	// NovelClue is the client for interacting with the NovelClue builders.
 	NovelClue *NovelClueClient
 }
@@ -35,6 +39,7 @@ func NewClient(opts ...Option) *Client {
 
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
+	c.Novel = NewNovelClient(c.config)
 	c.NovelClue = NewNovelClueClient(c.config)
 }
 
@@ -69,6 +74,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	return &Tx{
 		ctx:       ctx,
 		config:    cfg,
+		Novel:     NewNovelClient(cfg),
 		NovelClue: NewNovelClueClient(cfg),
 	}, nil
 }
@@ -88,6 +94,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	cfg.driver = &txDriver{tx: tx, drv: c.driver}
 	return &Tx{
 		config:    cfg,
+		Novel:     NewNovelClient(cfg),
 		NovelClue: NewNovelClueClient(cfg),
 	}, nil
 }
@@ -95,7 +102,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 // Debug returns a new debug-client. It's used to get verbose logging on specific operations.
 //
 //	client.Debug().
-//		NovelClue.
+//		Novel.
 //		Query().
 //		Count(ctx)
 //
@@ -118,7 +125,114 @@ func (c *Client) Close() error {
 // Use adds the mutation hooks to all the entity clients.
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
+	c.Novel.Use(hooks...)
 	c.NovelClue.Use(hooks...)
+}
+
+// NovelClient is a client for the Novel schema.
+type NovelClient struct {
+	config
+}
+
+// NewNovelClient returns a client for the Novel from the given config.
+func NewNovelClient(c config) *NovelClient {
+	return &NovelClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `novel.Hooks(f(g(h())))`.
+func (c *NovelClient) Use(hooks ...Hook) {
+	c.hooks.Novel = append(c.hooks.Novel, hooks...)
+}
+
+// Create returns a create builder for Novel.
+func (c *NovelClient) Create() *NovelCreate {
+	mutation := newNovelMutation(c.config, OpCreate)
+	return &NovelCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Novel entities.
+func (c *NovelClient) CreateBulk(builders ...*NovelCreate) *NovelCreateBulk {
+	return &NovelCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Novel.
+func (c *NovelClient) Update() *NovelUpdate {
+	mutation := newNovelMutation(c.config, OpUpdate)
+	return &NovelUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *NovelClient) UpdateOne(n *Novel) *NovelUpdateOne {
+	mutation := newNovelMutation(c.config, OpUpdateOne, withNovel(n))
+	return &NovelUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *NovelClient) UpdateOneID(id int) *NovelUpdateOne {
+	mutation := newNovelMutation(c.config, OpUpdateOne, withNovelID(id))
+	return &NovelUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Novel.
+func (c *NovelClient) Delete() *NovelDelete {
+	mutation := newNovelMutation(c.config, OpDelete)
+	return &NovelDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a delete builder for the given entity.
+func (c *NovelClient) DeleteOne(n *Novel) *NovelDeleteOne {
+	return c.DeleteOneID(n.ID)
+}
+
+// DeleteOneID returns a delete builder for the given id.
+func (c *NovelClient) DeleteOneID(id int) *NovelDeleteOne {
+	builder := c.Delete().Where(novel.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &NovelDeleteOne{builder}
+}
+
+// Query returns a query builder for Novel.
+func (c *NovelClient) Query() *NovelQuery {
+	return &NovelQuery{
+		config: c.config,
+	}
+}
+
+// Get returns a Novel entity by its id.
+func (c *NovelClient) Get(ctx context.Context, id int) (*Novel, error) {
+	return c.Query().Where(novel.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *NovelClient) GetX(ctx context.Context, id int) *Novel {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryClue queries the clue edge of a Novel.
+func (c *NovelClient) QueryClue(n *Novel) *NovelClueQuery {
+	query := &NovelClueQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := n.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(novel.Table, novel.FieldID, id),
+			sqlgraph.To(novelclue.Table, novelclue.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, novel.ClueTable, novel.ClueColumn),
+		)
+		fromV = sqlgraph.Neighbors(n.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *NovelClient) Hooks() []Hook {
+	return c.hooks.Novel
 }
 
 // NovelClueClient is a client for the NovelClue schema.
@@ -204,6 +318,22 @@ func (c *NovelClueClient) GetX(ctx context.Context, id int) *NovelClue {
 		panic(err)
 	}
 	return obj
+}
+
+// QueryNovel queries the novel edge of a NovelClue.
+func (c *NovelClueClient) QueryNovel(nc *NovelClue) *NovelQuery {
+	query := &NovelQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := nc.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(novelclue.Table, novelclue.FieldID, id),
+			sqlgraph.To(novel.Table, novel.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, novelclue.NovelTable, novelclue.NovelColumn),
+		)
+		fromV = sqlgraph.Neighbors(nc.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
 }
 
 // Hooks returns the client hooks.
